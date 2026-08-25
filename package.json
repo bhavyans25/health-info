@@ -2,7 +2,7 @@
   "name": "instaclone-monorepo",
   "private": true,
   "version": "1.0.0",
-  "description": "Monorepo for InstaClone",
+  "description": "Monorepo for Community Health Awareness Hub",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,7 +13,8 @@
     "start": "npm run start --workspaces --if-present",
     "postinstall": "npm run prisma:generate --workspace=@instaclone/db --if-present"
   },
-  "devDependencies": {
+  "dependencies": {
+    "prisma": "^5.10.0",
     "typescript": "^5.0.0"
   }
 }
