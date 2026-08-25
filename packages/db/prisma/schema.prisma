@@ -1,0 +1,217 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  name         String?
+  bio          String?
+  avatarUrl    String?
+  externalLink String?
+  publicKey    String?  // Client's X25519 public key for E2EE chat
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  sessions      Session[]
+  posts         Post[]
+  likes         Like[]
+  comments      Comment[]
+  stories       Story[]
+  storyViews    StoryView[]
+  
+  // Follow system (Self-referential relation)
+  followers     Follow[] @relation("following")
+  following     Follow[] @relation("follower")
+
+  conversations ConversationParticipant[]
+  messages      Message[]
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  refreshTokenHash String   @unique
+  deviceInfo       String?
+  createdAt        DateTime @default(now())
+  lastUsedAt       DateTime @default(now())
+  expiresAt        DateTime
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  authorId  String
+  caption   String?  @db.Text
+  mediaUrls String[] // Array of strings (Postgres supports arrays)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Story {
+  id        String   @id @default(uuid())
+  authorId  String
+  mediaUrl  String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  // Relations
+  author User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  views  StoryView[]
+}
+
+model StoryView {
+  id       String   @id @default(uuid())
+  storyId  String
+  viewerId String
+  viewedAt DateTime @default(now())
+
+  // Relations
+  story  Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewer User  @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, viewerId])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  ciphertext     String    @db.Text
+  nonce          String    @db.Text
+  createdAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model HealthUser {
+  id        String   @id @default(uuid())
+  name      String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  diseases HealthDisease[]
+  comments HealthComment[]
+  replies  HealthReply[]
+}
+
+model HealthDisease {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  mediaUrls   String[]
+  authorId    String
+  authorName  String
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  author   HealthUser      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments HealthComment[]
+}
+
+model HealthComment {
+  id         String   @id @default(uuid())
+  diseaseId  String
+  userId     String
+  authorName String
+  text       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  disease HealthDisease @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+  user    HealthUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies HealthReply[]
+}
+
+model HealthReply {
+  id         String   @id @default(uuid())
+  commentId  String
+  userId     String
+  authorName String
+  text       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  comment HealthComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    HealthUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
