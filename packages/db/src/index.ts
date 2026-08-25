@@ -4,7 +4,19 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-export const prisma = global.prisma || new PrismaClient();
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  'postgresql://postgres:password@localhost:5432/instaclone?schema=public';
+
+export const prisma =
+  global.prisma ||
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
+  });
 
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
