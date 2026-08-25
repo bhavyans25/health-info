@@ -11,6 +11,7 @@
     "dev": "npm run dev --workspaces --if-present",
     "build": "npm run build --workspace=@instaclone/shared && npm run build --workspace=@instaclone/db && npm run build --workspace=@instaclone/web",
     "start": "npm run start --workspaces --if-present",
+    "backup": "node scripts/backup.js",
     "postinstall": "npm run prisma:generate --workspace=@instaclone/db --if-present"
   },
   "dependencies": {
