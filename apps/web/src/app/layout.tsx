@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'InstaClone',
-  description: 'Full-stack social media web app',
+  title: 'Community Health Awareness Hub',
+  description: 'Anonymous, secure public health awareness platform',
 };
 
 export default function RootLayout({
